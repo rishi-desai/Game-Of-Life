@@ -87,12 +87,76 @@ def render(state):
             else:
                 # print DEAD
                 print(" ", end=" ")
-        # print right border
+        # print`` right border
         print("|")
 
     # print bottom border
     print("-" * (width * 2 + 2))
 
+def next_cell_value(coords, state):
+    width = get_state_width(state)
+    height = get_state_height(state)
+
+    x = coords[0]
+    y = coords[1]
+    alive_neighbors = 0
+
+    if x >= len(state) or y >= len(state[0]):
+        return "Coordinates out of range"
+
+    for x1 in range(max(0, x - 1), min(x + 1, height - 1) + 1):
+        for y1 in range(max(0, y - 1), min(y + 1, width - 1) + 1):
+            if x1 == x and y1 == y: continue
+            if state[x1][y1] == ALIVE:
+                alive_neighbors += 1
+
+    # print(f'The number of alive neighbors for cell {coords} is {alive_neighbors}')
+    
+    if state[x][y] == ALIVE:
+        if alive_neighbors <= 1:
+            return DEAD
+        elif alive_neighbors <= 3:
+            return ALIVE
+        else:
+            return DEAD
+    else:
+        if alive_neighbors == 3:
+            return ALIVE
+        else:
+            return DEAD
+        
+def next_board_state(state):
+    width = get_state_width(state)
+    height = get_state_height(state)
+
+    next_state = dead_state(width, height)
+
+    for x in range(width):
+        for y in range(height):
+            next_state[x][y] = next_cell_value((x, y), state)
+
+    return next_state
+
+def run_forever(state):
+    next_state = state
+    while True:
+        render(next_state)
+        next_state = next_board_state(next_state)
+        time.sleep(0.03)
+
+def load_state(filepath):
+    with open(filepath, 'r') as f:
+        lines = [l.rstrip() for l in f.readlines()]
+
+    height = len(lines)
+    width = len(lines[0])
+    board = dead_state(height, width)
+
+    for x, line in enumerate(lines):
+        for y, char in enumerate(line):
+            board[x][y] = int(char)
+    return board
+
 if __name__ == "__main__":
-    state = random_state(20, 30)
-    render(state)
+    board = load_state('./boards/glider_gun.txt')
+    run_forever(board)
